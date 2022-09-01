@@ -17,87 +17,23 @@ Conditions:
     - test
 
 Resources:
+############################################################
+#    VPC
+############################################################
   myVPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.10.0.0/16
       EnableDnsSupport: 'false'
       EnableDnsHostnames: 'false'
-      #InstanceTenancy: dedicated
+      InstanceTenancy: dedicated
       Tags:
       - Key: Name
         Value: myVPC
-      - Key: Application
-        Value: !Ref 'AWS::StackName'
 
-  PublicSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId:
-        Ref: myVPC
-      CidrBlock: 10.10.1.0/24
-      Tags:
-      - Key: Name
-        Value: PublicSubnet
-      - Key: Application
-        Value: !Ref 'AWS::StackName'
-
-#  PublicRT:
-#    Type: AWS::EC2::RouteTable
-#    DependsOn: PublicSubnet
-#    Properties:
-#      VpcId:
-#        Ref: PublicSubnet
-#      Tags:
-#      - Key: Name
-#        Value: PublicRT
-#      - Key: Application
-#        Value: !Ref 'AWS::StackName'
-#
-#  PublicRoute:
-#    Type: AWS::EC2::Route
-#    DependsOn: InternetGateway
-#    Properties:
-#      RouteTableId:
-#        Ref: PublicRT
-#      DestinationCidrBlock: 0.0.0.0/0
-#      GatewayId:
-#        Ref: InternetGateway
-
-  dbSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId:
-        Ref: myVPC
-      CidrBlock: 10.10.2.0/24
-      Tags:
-      - Key: Name
-        Value: dbSubnet
-      - Key: Application
-        Value: !Ref 'AWS::StackName'
-
-  PrivateSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId:
-        Ref: myVPC
-      CidrBlock: 10.10.3.0/24
-      Tags:
-      - Key: Name
-        Value: PrivateSubnet
-      - Key: Application
-        Value: !Ref 'AWS::StackName'
-
-#  PrivateRT:
-#    Type: AWS::EC2::RouteTable
-#    Properties:
-#      VpcId:
-#        Ref: PrivateSubnet
-#      Tags:
-#        - Key: Application
-#          Value: !Ref 'AWS::StackName'
-
-# GW
+############################################################
+#  Internet  GW
+############################################################
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
     Properties:
@@ -114,35 +50,136 @@ Resources:
         !Ref myVPC
       InternetGatewayId:
         !Ref InternetGateway
+############################################################
+#    PublicSubnet 10.10.1.0
+############################################################
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.10.1.0/24
+      Tags:
+      - Key: Name
+        Value: PublicSubnet
 
-##NAT
-#  NATGateway:
-#     Type: AWS::EC2::NatGateway
-#     Properties:
-#        AllocationId: !GetAtt NATGatewayEIP.AllocationId
-#        SubnetId: !Ref PrivateSubnet
-#        Tags:
-#        - Key: Application
-#          Value: !Ref 'AWS::StackName'
-#  NATGatewayEIP:
-#     Type: AWS::EC2::EIP
-#     Properties:
-#        Domain: vpc
-#  RouteNATGateway:
-#     DependsOn: NATGateway
-#     Type: AWS::EC2::Route
-#     Properties:
-#        RouteTableId: !Ref PrivateRT
-#        DestinationCidrBlock: '0.0.0.0/0'
-#        NatGatewayId: !Ref NATGateway
+  PublicSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: myVPC
+      Tags:
+      - Key: Name
+        Value: PublicSubnetRouteTable
 
-#Access key
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicSubnetRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicSubnetRouteTable
+
+############################################################
+#    Nat PublicSubnet
+############################################################
+  NATGateway:
+     Type: AWS::EC2::NatGateway
+     Properties:
+        AllocationId: !GetAtt NATGatewayEIP.AllocationId
+        SubnetId: !Ref PrivateSubnet
+
+  NATGatewayEIP:
+     Type: AWS::EC2::EIP
+     Properties:
+        Domain: myVPC
+
+############################################################
+#    PublicSubnet
+############################################################
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.10.2.0/24
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet
+
+  PrivateSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+        VpcId:
+          Ref: myVPC
+        Tags:
+          - Key: Name
+            Value: PrivateSubnetRouteTable
+
+  PrivateInternetRoute:
+    DependsOn: NATGateway
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateSubnetRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NATGateway
+
+  PrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !Ref PrivateSubnetRouteTable
+
+############################################################
+#    dbSubnet
+############################################################
+  dbSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: myVPC
+      CidrBlock: 10.10.3.0/24
+      Tags:
+      - Key: Name
+        Value: dbSubnet
+
+  dbSubnetRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: myVPC
+      Tags:
+        - Key: Name
+          Value: dbSubnetRouteTable
+
+#  dbSubnetRoute:
+#    Type: AWS::EC2::Route
+#    Properties:
+#      RouteTableId: !Ref dbSubnetRouteTable
+#      DestinationCidrBlock: 10.10.3.0/24
+#      GatewayId: !Ref NATGateway
+#
+  dbSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref dbSubnet
+      RouteTableId: !Ref dbSubnetRouteTable
+
+############################################################
+#    Test Hosts
+############################################################
+  #Access key
   myKeyPair:
-      Type: 'AWS::EC2::KeyPair'
-      Properties:
-        KeyName: myKP
+    Type: 'AWS::EC2::KeyPair'
+    Properties:
+      KeyName: myKP
 
-#Test Hosts
   Bastion:
     Type: 'AWS::EC2::Instance'
     Properties:
@@ -160,8 +197,6 @@ Resources:
       Tags:
         - Key: Name
           Value: Bastion
-        - Key: Application
-          Value: !Ref 'AWS::StackName'
 
   DB:
     Type: 'AWS::EC2::Instance'
@@ -171,7 +206,7 @@ Resources:
         Ref: "myKeyPair"
       InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
       NetworkInterfaces:
-      - AssociatePublicIpAddress: "true"
+      - AssociatePublicIpAddress: "false"
         DeviceIndex: "0"
 #        GroupSet:
 #          - Ref: "myVPCEC2SecurityGroup"
@@ -180,8 +215,6 @@ Resources:
       Tags:
         - Key: Name
           Value: DB
-        - Key: Application
-          Value: !Ref 'AWS::StackName'
 
   Prv:
     Type: 'AWS::EC2::Instance'
@@ -191,7 +224,7 @@ Resources:
         Ref: "myKeyPair"
       InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
       NetworkInterfaces:
-      - AssociatePublicIpAddress: "true"
+      - AssociatePublicIpAddress: "false"
         DeviceIndex: "0"
 #        GroupSet:
 #          - Ref: "myVPCEC2SecurityGroup"
@@ -199,22 +232,40 @@ Resources:
           Ref: "PrivateSubnet"
       Tags:
         - Key: Name
-          Value: Private
-        - Key: Application
-          Value: !Ref 'AWS::StackName'
+          Value: Prv
+
+#  Vp:
+#    Type: 'AWS::EC2::Instance'
+#    Properties:
+#      ImageId: ami-05fa00d4c63e32376
+#      KeyName:
+#        Ref: "myKeyPair"
+#      InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
+#      NetworkInterfaces:
+#      - AssociatePublicIpAddress: "true"
+#        DeviceIndex: "0"
+##        GroupSet:
+##          - Ref: "myVPCEC2SecurityGroup"
+##        SubnetId:
+##          Ref: myVPC
+#      Tags:
+#        - Key: Name
+#          Value: Vp
+
 
 Outputs:
+#  VpIP:
+#    Description: The Instance IP
+#    Value: !GetAtt Vp.PublicIp
   BastionIp:
-    Description: The Instance ID
-    Value: !GetAtt Bastion.PrivateIp
+    Description: The Instance IP
+    Value: !GetAtt Bastion.PublicIp
   DBIp:
-    Description: The Instance ID
+    Description: The Instance IP
     Value: !GetAtt DB.PrivateIp
   PrvIp:
-    Description: The Instance ID
+    Description: The Instance IP
     Value: !GetAtt Prv.PrivateIp
-  InstanceID:
-    Description: The Instance ID
-    Value: !Ref Bastion
-
-
+#  InstanceID:
+#    Description: The Instance ID
+#    Value: !Ref Bastion
