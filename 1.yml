@@ -6,7 +6,7 @@ Parameters:
     AllowedValues:
       - test
       - prod
-    Default: test
+    Default: prod
     ConstraintDescription: Specify either test or prod.
 Conditions:
   IsProduction: !Equals 
@@ -26,7 +26,7 @@ Resources:
       CidrBlock: 10.10.0.0/16
       EnableDnsSupport: 'false'
       EnableDnsHostnames: 'false'
-      InstanceTenancy: dedicated
+      #InstanceTenancy: dedicated
       Tags:
       - Key: Name
         Value: myVPC
@@ -180,23 +180,59 @@ Resources:
     Properties:
       KeyName: myKP
 
+  PublicSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable access to the EC2 host
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: '-1'
+          ToPort: '-1'
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: PublicSecurityGroup
+
   Bastion:
     Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-05fa00d4c63e32376
       KeyName:
         Ref: "myKeyPair"
-      InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
+      InstanceType: !If [ IsProduction, t2.micro, !If [ IsTest, t1.micro, "" ] ]
       NetworkInterfaces:
-      - AssociatePublicIpAddress: "true"
-        DeviceIndex: "0"
-#        GroupSet:
-#          - Ref: "myVPCEC2SecurityGroup"
-        SubnetId:
-          Ref: "PublicSubnet"
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: "PublicSecurityGroup"
+          SubnetId:
+            Ref: "PublicSubnet"
       Tags:
         - Key: Name
           Value: Bastion
+
+  dbSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable access to the EC2 host
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 10.10.1.0/0
+        - IpProtocol: icmp
+          FromPort: '-1'
+          ToPort: '-1'
+          CidrIp: 10.10.1.0/0
+      Tags:
+        - Key: Name
+          Value: dbSecurityGroup
 
   DB:
     Type: 'AWS::EC2::Instance'
@@ -208,13 +244,31 @@ Resources:
       NetworkInterfaces:
       - AssociatePublicIpAddress: "false"
         DeviceIndex: "0"
-#        GroupSet:
-#          - Ref: "myVPCEC2SecurityGroup"
+        GroupSet:
+          - Ref: "dbSecurityGroup"
         SubnetId:
           Ref: "dbSubnet"
       Tags:
         - Key: Name
           Value: DB
+
+  privateSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable access to the EC2 host
+      VpcId: !Ref myVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 10.10.1.0/0
+        - IpProtocol: icmp
+          FromPort: '-1'
+          ToPort: '-1'
+          CidrIp: 10.10.1.0/0
+      Tags:
+        - Key: Name
+          Value: privateSecurityGroup
 
   Prv:
     Type: 'AWS::EC2::Instance'
@@ -226,39 +280,17 @@ Resources:
       NetworkInterfaces:
       - AssociatePublicIpAddress: "false"
         DeviceIndex: "0"
-#        GroupSet:
-#          - Ref: "myVPCEC2SecurityGroup"
+        GroupSet:
+          - Ref: "privateSecurityGroup"
         SubnetId:
           Ref: "PrivateSubnet"
       Tags:
         - Key: Name
           Value: Prv
 
-#  Vp:
-#    Type: 'AWS::EC2::Instance'
-#    Properties:
-#      ImageId: ami-05fa00d4c63e32376
-#      KeyName:
-#        Ref: "myKeyPair"
-#      InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
-#      NetworkInterfaces:
-#      - AssociatePublicIpAddress: "true"
-#        DeviceIndex: "0"
-##        GroupSet:
-##          - Ref: "myVPCEC2SecurityGroup"
-##        SubnetId:
-##          Ref: myVPC
-#      Tags:
-#        - Key: Name
-#          Value: Vp
-
-
 Outputs:
-#  VpIP:
-#    Description: The Instance IP
-#    Value: !GetAtt Vp.PublicIp
   BastionIp:
-    Description: The Instance IP
+    Description: The Instance IPs
     Value: !GetAtt Bastion.PublicIp
   DBIp:
     Description: The Instance IP
@@ -269,3 +301,5 @@ Outputs:
 #  InstanceID:
 #    Description: The Instance ID
 #    Value: !Ref Bastion
+
+
