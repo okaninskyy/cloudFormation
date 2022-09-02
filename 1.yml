@@ -50,7 +50,44 @@ Resources:
         !Ref myVPC
       InternetGatewayId:
         !Ref InternetGateway
-############################################################
+
+  igwRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: myVPC
+      Tags:
+        - Key: Name
+          Value: igwRouteTable
+
+#  igwRoute1:
+#    Type: AWS::EC2::Route
+#    Properties:
+#      RouteTableId: !Ref igwRouteTable
+#      DestinationCidrBlock: 10.10.1.0/0
+#      GatewayId: !Ref InternetGateway
+#
+#  igwRoute2:
+#    Type: AWS::EC2::Route
+#    Properties:
+#      RouteTableId: !Ref igwRouteTable
+#      DestinationCidrBlock: 10.10.2.0/0
+#      GatewayId: !Ref InternetGateway
+#
+#  igwRoute3:
+#    Type: AWS::EC2::Route
+#    Properties:
+#      RouteTableId: !Ref igwRouteTable
+#      DestinationCidrBlock: 10.10.3.0/0
+#      GatewayId: !Ref InternetGateway
+#
+#  igwRouteTableAssociation:
+#    Type: AWS::EC2::SubnetRouteTableAssociation
+#    Properties:
+#      SubnetId: !Ref PublicSubnet
+#      RouteTableId: !Ref PublicSubnetRouteTable
+
+  ############################################################
 #    PublicSubnet 10.10.1.0
 ############################################################
   PublicSubnet:
@@ -93,7 +130,7 @@ Resources:
      Type: AWS::EC2::NatGateway
      Properties:
         AllocationId: !GetAtt NATGatewayEIP.AllocationId
-        SubnetId: !Ref PrivateSubnet
+        SubnetId: !Ref PublicSubnet
 
   NATGatewayEIP:
      Type: AWS::EC2::EIP
@@ -289,6 +326,9 @@ Resources:
           Value: Prv
 
 Outputs:
+#  VpIP:
+#    Description: The Instance IP
+#    Value: !GetAtt Vp.PublicIp
   BastionIp:
     Description: The Instance IPs
     Value: !GetAtt Bastion.PublicIp
@@ -301,5 +341,3 @@ Outputs:
 #  InstanceID:
 #    Description: The Instance ID
 #    Value: !Ref Bastion
-
-
