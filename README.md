@@ -16,8 +16,8 @@ This is a sample of AWS CloudFormation template to learn how to declare specific
 
 ## Usage
 
-#### Create a key pair and download access key:
-    aws ec2 create-key-pair --key-name MyKeyPair --query 'KeyMaterial' --output text > MyKeyPair.pem
+#### Create a key pair and download access key (windows powershell command):
+    aws ec2 create-key-pair --key-name MyKeyPair --query 'KeyMaterial' --output text | out-file -encoding ascii -filepath MyKeyPair.pem
 
 
 ## Building
