@@ -6,13 +6,19 @@ This is a sample of AWS CloudFormation template to learn how to declare specific
 ![Alt text](img/cloud_formation_task.jpg?raw=true "Title")
 
 
-## Usage
 
 ## Prepare to work with AWS CLI
+
 #### install awscli:  
     pip3 install awscli --upgrade --user
 #### configure awscli: 
     aws configure
+
+## Usage
+
+#### Create a key pair
+    aws ec2 create-key-pair --key-name MyKeyPair --query 'KeyMaterial' --output text > MyKeyPair.pem
+
 
 ## Building
 
@@ -23,7 +29,7 @@ This is a sample of AWS CloudFormation template to learn how to declare specific
     aws cloudformation create-stack --stack-name l1 --template-body file://1.yml
 
 #### Lets create stack with parametrs
-    aws cloudformation create-stack --stack-name l1 --template-body file://1.yml --parameters ParameterKey=CustomVPC,ParameterValue=<VPC ID>
+    aws cloudformation create-stack --stack-name l1 --template-body file://1.yml --parameters ParameterKey=KeyName,ParameterValue=MyKeyPair
 
 #### Check if the stack we created via template is completed successfully
     aws cloudformation describe-stacks --stack-name l1
