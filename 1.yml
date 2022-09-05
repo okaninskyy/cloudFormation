@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
   EnvType:
     Description: Specify the Environment type of the stack.
     Type: String
@@ -87,7 +91,7 @@ Resources:
 #      SubnetId: !Ref PublicSubnet
 #      RouteTableId: !Ref PublicSubnetRouteTable
 
-  ############################################################
+############################################################
 #    PublicSubnet 10.10.1.0
 ############################################################
   PublicSubnet:
@@ -211,11 +215,6 @@ Resources:
 ############################################################
 #    Test Hosts
 ############################################################
-  #Access key
-  myKeyPair:
-    Type: 'AWS::EC2::KeyPair'
-    Properties:
-      KeyName: myKP
 
   PublicSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -240,7 +239,7 @@ Resources:
     Properties:
       ImageId: ami-05fa00d4c63e32376
       KeyName:
-        Ref: "myKeyPair"
+        Ref: KeyName
       InstanceType: !If [ IsProduction, t2.micro, !If [ IsTest, t1.micro, "" ] ]
       NetworkInterfaces:
         - AssociatePublicIpAddress: "true"
@@ -276,7 +275,7 @@ Resources:
     Properties:
       ImageId: ami-05fa00d4c63e32376
       KeyName:
-        Ref: "myKeyPair"
+        Ref: KeyName
       InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
       NetworkInterfaces:
       - AssociatePublicIpAddress: "false"
@@ -312,7 +311,7 @@ Resources:
     Properties:
       ImageId: ami-05fa00d4c63e32376
       KeyName:
-        Ref: "myKeyPair"
+        Ref: KeyName
       InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
       NetworkInterfaces:
       - AssociatePublicIpAddress: "false"
@@ -326,9 +325,6 @@ Resources:
           Value: Prv
 
 Outputs:
-#  VpIP:
-#    Description: The Instance IP
-#    Value: !GetAtt Vp.PublicIp
   BastionIp:
     Description: The Instance IPs
     Value: !GetAtt Bastion.PublicIp
@@ -338,6 +334,3 @@ Outputs:
   PrvIp:
     Description: The Instance IP
     Value: !GetAtt Prv.PrivateIp
-#  InstanceID:
-#    Description: The Instance ID
-#    Value: !Ref Bastion
