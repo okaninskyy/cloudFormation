@@ -1,17 +1,12 @@
 ## AWS Networking Fundamentals in CloudFormation
 This is a sample of AWS CloudFormation template to learn how to declare specific AWS resources or solve a particular use case.
 
-## Diagram
+
 
 ![Alt text](img/cloud_formation_task.jpg?raw=true "Title")
 
 
-
 ## Usage
-
-
-
-
 
 ## Prepare to work with AWS CLI
 #### install awscli:  
