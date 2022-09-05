@@ -3,7 +3,7 @@ This is a sample of AWS CloudFormation template to learn how to declare specific
 
 ## Diagram
 
-
+![Alt text](img/cloud_formation_task.jpg?raw=true "Title")
 
 
 
