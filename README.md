@@ -23,8 +23,7 @@ This is a sample of AWS CloudFormation template to learn how to declare specific
     aws cloudformation update-stack --stack-name l1 --template-body file://1.yml --parameters ParameterKey=KeyName,ParameterValue=MyKeyPair    
 
 #### Create a "prod" environment (by populate each subnet by test boxes)
-    aws cloudformation update-stack --stack-name l1 --template-body file://1.yml --parameters ParameterKey=KeyName,ParameterValue=MyKeyPair Param
-eterKey=EnvType,ParameterValue=prod
+    aws cloudformation update-stack --stack-name l1 --template-body file://1.yml --parameters ParameterKey=KeyName,ParameterValue=MyKeyPair ParameterKey=EnvType,ParameterValue=prod
 
 
 ## Building
