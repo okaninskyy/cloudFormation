@@ -16,8 +16,15 @@ This is a sample of AWS CloudFormation template to learn how to declare specific
 
 ## Usage
 
-#### Create a key pair and download access key (windows powershell command):
+#### Create a key pair for access and download it to local folder (windows powershell command):
     aws ec2 create-key-pair --key-name MyKeyPair --query 'KeyMaterial' --output text | out-file -encoding ascii -filepath MyKeyPair.pem
+
+#### Create a "test" environment according to "AWS Network Task" picture above (default value)
+    aws cloudformation update-stack --stack-name l1 --template-body file://1.yml --parameters ParameterKey=KeyName,ParameterValue=MyKeyPair    
+
+#### Create a "prod" environment (by populate each subnet by test boxes)
+    aws cloudformation update-stack --stack-name l1 --template-body file://1.yml --parameters ParameterKey=KeyName,ParameterValue=MyKeyPair Param
+eterKey=EnvType,ParameterValue=prod
 
 
 ## Building

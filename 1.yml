@@ -1,17 +1,23 @@
 AWSTemplateFormatVersion: 2010-09-09
+
 Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
     Type: AWS::EC2::KeyPair::KeyName
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  strImageId:
+    Description: Amazon Linux ID in eu-west-1
+    Type: String
+    Default: ami-05fa00d4c63e32376
   EnvType:
     Description: Specify the Environment type of the stack.
     Type: String
     AllowedValues:
       - test
       - prod
-    Default: prod
+    Default: test
     ConstraintDescription: Specify either test or prod.
+
 Conditions:
   IsProduction: !Equals 
     - !Ref EnvType
@@ -237,7 +243,8 @@ Resources:
   Bastion:
     Type: 'AWS::EC2::Instance'
     Properties:
-      ImageId: ami-05fa00d4c63e32376
+      ImageId:
+        Ref: strImageId
       KeyName:
         Ref: KeyName
       InstanceType: !If [ IsProduction, t2.micro, !If [ IsTest, t1.micro, "" ] ]
@@ -254,6 +261,7 @@ Resources:
 
   dbSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    Condition : IsProduction
     Properties:
       GroupDescription: Enable access to the EC2 host
       VpcId: !Ref myVPC
@@ -272,8 +280,10 @@ Resources:
 
   DB:
     Type: 'AWS::EC2::Instance'
+    Condition : IsProduction
     Properties:
-      ImageId: ami-05fa00d4c63e32376
+      ImageId:
+        Ref: strImageId
       KeyName:
         Ref: KeyName
       InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
@@ -290,6 +300,7 @@ Resources:
 
   privateSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    Condition : IsProduction
     Properties:
       GroupDescription: Enable access to the EC2 host
       VpcId: !Ref myVPC
@@ -308,8 +319,10 @@ Resources:
 
   Prv:
     Type: 'AWS::EC2::Instance'
+    Condition : IsProduction
     Properties:
-      ImageId: ami-05fa00d4c63e32376
+      ImageId:
+        Ref: strImageId
       KeyName:
         Ref: KeyName
       InstanceType: !If [IsProduction, t2.micro, !If [IsTest, t1.micro, ""]]
@@ -331,6 +344,8 @@ Outputs:
   DBIp:
     Description: The Instance IP
     Value: !GetAtt DB.PrivateIp
+    Condition : IsProduction
   PrvIp:
     Description: The Instance IP
     Value: !GetAtt Prv.PrivateIp
+    Condition : IsProduction
